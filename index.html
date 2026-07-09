@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AURA Convert | Cinematic Client-Side Image Converter</title>
+    <meta name="description" content="Convert your images between JPEG, PNG, WebP, BMP, and HEIC entirely in your browser. 100% private, secure, and fast. No server uploads.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- JSZip Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+</head>
+<body>
+    <div class="glow-bg"></div>
+    <div class="glow-bg-secondary"></div>
+
+    <div class="app-container">
+        <!-- Header Section -->
+        <header class="app-header">
+            <div class="logo-area">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="url(#logo-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 17L12 22L22 17" stroke="url(#logo-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M2 12L12 17L22 12" stroke="url(#logo-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <defs>
+                            <linearGradient id="logo-grad" x1="2" y1="2" x2="22" y2="22" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#a855f7"/>
+                                <stop offset="1" stop-color="#06b6d4"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+                <h1>AURA<span>CONVERT</span></h1>
+            </div>
+            <div class="privacy-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+                <span>100% In-Browser &bull; Private</span>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <main class="main-content">
+            <!-- Dropzone / Landing Section -->
+            <section class="dropzone-section">
+                <div class="dropzone-card" id="dropzone">
+                    <input type="file" id="file-input" multiple accept="image/*,.heic,.heif" class="hidden-input">
+                    <div class="dropzone-content">
+                        <div class="upload-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                        </div>
+                        <h2>Drag & drop your files here</h2>
+                        <p>Supports PNG, JPEG, WebP, GIF, BMP, HEIC</p>
+                        <button type="button" class="btn btn-primary btn-browse" id="btn-browse">Browse Files</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Workspace Section (Hidden when empty) -->
+            <section class="workspace-section hidden" id="workspace">
+                <!-- Global Config Bar -->
+                <div class="global-controls-card">
+                    <div class="control-group">
+                        <label for="global-format">Convert all to</label>
+                        <select id="global-format" class="select-input">
+                            <option value="image/png">PNG</option>
+                            <option value="image/jpeg">JPEG</option>
+                            <option value="image/webp" selected>WebP</option>
+                            <option value="image/bmp">BMP</option>
+                            <option value="image/avif">AVIF</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group" id="global-quality-wrapper">
+                        <div class="label-val">
+                            <label for="global-quality">Quality</label>
+                            <span id="global-quality-val">85%</span>
+                        </div>
+                        <input type="range" id="global-quality" min="1" max="100" value="85" class="range-slider">
+                    </div>
+
+                    <div class="control-group" id="global-color-wrapper" style="display: none;">
+                        <label for="global-bg-color">Flat Background Fill</label>
+                        <div class="color-picker-container">
+                            <input type="color" id="global-bg-color" value="#ffffff" class="color-picker">
+                            <input type="text" id="global-bg-color-text" value="#ffffff" class="text-input color-text" placeholder="#ffffff">
+                        </div>
+                    </div>
+
+                    <div class="global-actions">
+                        <button class="btn btn-secondary btn-clear" id="btn-clear-all">Clear All</button>
+                        <button class="btn btn-glow btn-convert-all" id="btn-convert-all">Convert All</button>
+                    </div>
+                </div>
+
+                <!-- Active Conversion List -->
+                <div class="file-list-header">
+                    <h3>Uploaded Images (<span id="file-count">0</span>)</h3>
+                </div>
+                
+                <div class="file-grid" id="file-grid">
+                    <!-- Dynamic file cards injected here -->
+                </div>
+
+                <!-- Bulk Action Panel at Bottom -->
+                <div class="bulk-footer-panel hidden" id="bulk-footer">
+                    <div class="bulk-stats">
+                        <span id="bulk-converted-count">0 of 0 converted</span>
+                        <div class="bulk-progress-bar-container">
+                            <div class="bulk-progress-bar" id="bulk-progress-bar"></div>
+                        </div>
+                    </div>
+                    <button class="btn btn-glow btn-download-all" id="btn-download-all" disabled>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                        Download All (ZIP)
+                    </button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Preview Modal -->
+        <div class="modal hidden" id="preview-modal">
+            <div class="modal-backdrop" id="modal-backdrop"></div>
+            <div class="modal-content">
+                <button class="btn-close" id="btn-close-modal" aria-label="Close">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+                <div class="modal-header">
+                    <h3 id="modal-filename">Image Comparison</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="comparison-container">
+                        <!-- Left Pane: Original -->
+                        <div class="comparison-pane">
+                            <div class="pane-badge badge-orig">Original</div>
+                            <div class="pane-img-container">
+                                <img id="modal-img-orig" src="" alt="Original Image">
+                            </div>
+                            <div class="pane-footer">
+                                <span id="modal-format-orig">PNG</span> &bull; <span id="modal-size-orig">0 KB</span>
+                            </div>
+                        </div>
+                        <!-- Right Pane: Converted -->
+                        <div class="comparison-pane">
+                            <div class="pane-badge badge-conv">Converted</div>
+                            <div class="pane-img-container">
+                                <img id="modal-img-conv" src="" alt="Converted Image">
+                            </div>
+                            <div class="pane-footer">
+                                <span id="modal-format-conv">WebP</span> &bull; <span id="modal-size-conv">0 KB</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div class="toast-container" id="toast-container"></div>
+    </div>
+</body>
+</html>
